@@ -1,0 +1,14 @@
+﻿@using MudBlazor
+@using MudBlazor.Dialog
+
+<MudTextField Label="Title" @bind-Value="newTask.title" />
+<MudTextField Label="Description" @bind-Value="newTask.description" />
+<MudSelect Label="Status" @bind-Value="newTask.status_id">
+    <MudSelectItem Value="1">Complete</MudSelectItem>
+    <MudSelectItem Value="2">Incomplete</MudSelectItem>
+</MudSelect>
+
+@code {
+
+    [Parameter] public UserTask newTask { get; set; } = new UserTask();
+}

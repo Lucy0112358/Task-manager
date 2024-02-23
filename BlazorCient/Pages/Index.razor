@@ -1,0 +1,131 @@
+﻿@page "/"
+@using BlazorCient.Services
+@using MudBlazor
+@using MudBlazor.Dialog
+@inject ITaskService _taskService
+@inject IDialogService _dialogService
+@attribute [Authorize]
+@* @attribute [Authorize Roles = "admin"] *@
+
+<h1>Tasks</h1>
+<AuthorizeView>
+@*     <AuthorizeView Roles="admin"> *@
+    <Authorized>
+        <span>Youre logged in</span>
+    </Authorized>
+    <NotAuthorized>
+        Please login
+    </NotAuthorized>
+</AuthorizeView>
+<MudContainer Class="d-flex justify-center mb-2">
+    <MudFab Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Large" IconSize="Size.Large" Label="Add A New Task"
+            Class="ma-2" @onclick="CreateTaskAsync" />
+</MudContainer>
+
+@if (tasks == null)
+{
+    <h1>Please wait</h1>
+}
+else
+{
+    @if (tasks.Any())
+    {
+        <MudGrid Justify="Justify.Center" class="pr-4 pl-4">
+            @foreach (var task in tasks)
+            {
+                <MudItem xs="3">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.body1">@task.title</MudText>
+                                <MudText Typo="Typo.h6">@task.description</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            @if (task.status_id == 1)
+                            {
+                                <MudText Typo="Typo.body2">Complete</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">Incomplete</MudText>
+                            }
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudIconButton Icon="@Icons.Filled.Edit" Color="Color.Primary" OnClick="@(e => UpdateTaskAsync(@task.id))"/>
+                            <MudIconButton Icon="@Icons.Filled.Delete" Color="Color.Error" OnClick="@((e) => DeleteTask(@task.id))" />
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@code {
+    private bool ShowCreateTaskModal = false;
+
+
+    private IEnumerable<UserTask> tasks = null;
+
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await fetchTasks();
+    }
+
+    public async Task fetchTasks()
+    {
+        tasks = await _taskService.getAllTasks();
+    }
+
+    private async Task CreateTaskAsync()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("newTask", new UserTask());
+
+        var dialog = await _dialogService.Show<AddTask>("Create a new task", parameters).Result;
+
+        if (dialog.Data != null)
+        {
+            UserTask task = dialog.Data as UserTask;
+            await _taskService.PostTask(task);
+
+            tasks = tasks.Concat(new[] { task });
+        }
+    }
+
+    private async Task UpdateTaskAsync(int id)
+    {
+        var parameters = new DialogParameters();
+        var updatedTask = tasks.FirstOrDefault(_ => _.id == id);
+        parameters.Add("newTask", updatedTask);
+
+        var dialog = await _dialogService.Show<EditTask>("Update task", parameters).Result;
+
+        if (dialog.Data != null)
+        {
+            var updated = dialog.Data as UserTask;
+            await _taskService.updateTask(updated.id, updated);           
+        }
+    }
+
+    private async Task DeleteTask(int id)
+    {
+        bool? result = await _dialogService.ShowMessageBox(
+            "Delete Confirmation",
+            "Deleting can't be undone",
+            yesText: "Delete", cancelText: "Cancel"
+        );
+
+        if(result ?? false)
+        {
+            await _taskService.deleteTask(id);
+
+           await fetchTasks();
+
+        }
+    }
+}

@@ -1,0 +1,58 @@
+﻿@page "/login"
+@using BlazorCient.Services
+@using MudBlazor
+@using System.Text.Json
+
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+
+@* <MudContainer>
+    <MudPaper Class="login-container" Elevation="4">
+        <h3>Login</h3>
+
+        <MudForm Model="user" Submit="HandleLogin">
+            <MudTextField Label="Name" @bind-Value="user.Username" />
+            <MudTextField Label="Password" @bind-Value="user.Password" Type="Password" />
+            <MudButton  @onclick="HandleLogin" Color="Color.Primary">Login</MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer> *@
+
+
+                <MudTextField Label="Name" @bind-Value="user.Username" />
+                <MudTextField Label="Password" @bind-Value="user.Password" Type="Password" />
+
+                <MudButton @onclick="HandleLogin" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                <button @onclick="HandleLogin" login></button>
+
+@code {
+    UserLoginDto user = new UserLoginDto();
+
+    async Task HandleLogin()
+    {
+        try
+        {
+
+        //    var json = JsonSerializer.Serialize(user);
+            var response = await Http.PostAsJsonAsync("http://localhost:5030/signin", user);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<string>();
+
+            Console.WriteLine(result);
+
+            await LocalStorage.SetItemAsync("token", result);
+
+            await AuthStateProvider.GetAuthenticationStateAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            // Handle the error as needed
+        }
+    }
+
+
+}

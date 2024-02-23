@@ -1,0 +1,36 @@
+﻿@using MudBlazor
+@using MudBlazor.Dialog
+@inject IDialogService _dialogService
+
+
+<MudDialog>
+    <DialogContent>
+        <Shared newTask="@newTask"></Shared>
+    </DialogContent>
+    <DialogActions>
+        <MudButton @onclick="Submit" Color="Color.Secondary">Edit Task</MudButton>
+        <MudButton @onclick="Cancel" Color="Color.Secondary">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public UserTask newTask { get; set; } = new UserTask();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Submit()
+    {
+
+        MudDialog.Close(DialogResult.Ok<UserTask>(newTask));
+    }
+
+}
